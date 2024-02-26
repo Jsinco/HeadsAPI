@@ -11,11 +11,15 @@ import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
 
-public class HeadsAPI {
+public final class HeadsAPI {
+
+    private static boolean verbose = false;
+
     /**
      * Get the base64 texture of a player's head using the Mojang API
      * @param uuid the UUID of the player
@@ -24,6 +28,9 @@ public class HeadsAPI {
      */
     @Nullable
     public static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
+        if (verbose) {
+            Bukkit.getLogger().info("[HeadsAPI] Getting MC profile through API...");
+        }
         StringBuilder content = getMinecraftProfile(uuid);
         JsonObject jsonObject = new Gson().fromJson(content.toString(), JsonObject.class);
         JsonElement properties = jsonObject.get("properties");
@@ -43,19 +50,28 @@ public class HeadsAPI {
     @Nullable
     public static StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
         uuid = uuid.replace("-", "").strip();
-        URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-
         StringBuilder content = new StringBuilder();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+
+        try {
+            URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 content.append(inputLine);
             }
             in.close();
             con.disconnect();
+        } catch (ConnectException e) {
+            e.printStackTrace(); // maybe just ignore
         }
+
+        if (verbose) {
+            Bukkit.getLogger().info("[HeadsAPI] Got MC profile through API!\n" + content);
+        }
+
         if (content.isEmpty()) {
             return null;
         }
@@ -69,9 +85,24 @@ public class HeadsAPI {
      * @return the base64 texture of the player's head or null if Bukkit cannot find their texture
      */
     @Nullable
-    public static String getBase64ThruPaper(@NotNull String uuid) {
+    public static String getBase64ThruBukkit(@NotNull String uuid) {
+        if (verbose) {
+            Bukkit.getLogger().info("[HeadsAPI] Getting MC profile through Bukkit...");
+        }
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid));
-        URL url = offlinePlayer.getPlayerProfile().getTextures().getSkin();
+        URL url;
+        if (offlinePlayer.isOnline()) {
+            if (verbose) {
+                Bukkit.getLogger().info("[HeadsAPI] Player is online! Getting texture from player profile...");
+            }
+            url = offlinePlayer.getPlayer().getPlayerProfile().getTextures().getSkin();
+        } else  {
+            if (verbose) {
+                Bukkit.getLogger().info("[HeadsAPI] Player is offline! Getting texture from player profile...");
+            }
+            url = offlinePlayer.getPlayerProfile().getTextures().getSkin();
+        }
+
         if (url != null) {
             return url.toString().replace("http://textures.minecraft.net/texture/", "").strip();
         }
@@ -85,7 +116,7 @@ public class HeadsAPI {
      */
     @Nullable
     public static String getBase64(@NotNull String uuid) {
-        String base64 = getBase64ThruPaper(uuid);
+        String base64 = getBase64ThruBukkit(uuid);
         if (base64 == null) {
             try {
                 base64 = getBase64ThruAPI(uuid);
@@ -104,5 +135,21 @@ public class HeadsAPI {
     @Nullable
     public static String getBase64(@NotNull UUID uuid) {
         return getBase64(uuid.toString());
+    }
+
+    /**
+     * Set the verbose mode of the API
+     * @param verbose true if you want to see the API's logs
+     */
+    public static void setVerbose(boolean verbose) {
+        HeadsAPI.verbose = verbose;
+    }
+
+    /**
+     * Get the verbose mode of the API
+     * @return true if the API is in verbose mode
+     */
+    public static boolean isVerbose() {
+        return verbose;
     }
 }
