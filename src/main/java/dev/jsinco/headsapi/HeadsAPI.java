@@ -1,5 +1,6 @@
 package dev.jsinco.headsapi;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -14,6 +15,7 @@ import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Base64;
 import java.util.UUID;
 
 public final class HeadsAPI {
@@ -87,26 +89,19 @@ public final class HeadsAPI {
     @Nullable
     public static String getBase64ThruBukkit(@NotNull String uuid) {
         if (verbose) {
-            Bukkit.getLogger().info("[HeadsAPI] Getting MC profile through Bukkit...");
+            Bukkit.getLogger().info("[HeadsAPI] Looking for MC profile through Bukkit...");
         }
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid));
-        URL url;
-        if (offlinePlayer.isOnline()) {
-            if (verbose) {
-                Bukkit.getLogger().info("[HeadsAPI] Player is online! Getting texture from player profile...");
-            }
-            url = offlinePlayer.getPlayer().getPlayerProfile().getTextures().getSkin();
-        } else  {
-            if (verbose) {
-                Bukkit.getLogger().info("[HeadsAPI] Player is offline! Getting texture from player profile...");
-            }
-            url = offlinePlayer.getPlayerProfile().getTextures().getSkin();
+        if (!offlinePlayer.hasPlayedBefore()) {
+            return null;
+        }
+        PlayerProfile playerProfile = offlinePlayer.getPlayerProfile();
+        if (verbose) {
+            Bukkit.getLogger().info("[HeadsAPI] Getting texture from Bukkit player profile! \n" + playerProfile);
         }
 
-        if (url != null) {
-            return url.toString().replace("http://textures.minecraft.net/texture/", "").strip();
-        }
-        return null;
+
+        return playerProfile.getProperties().stream().toList().get(0).getValue();
     }
 
     /**
@@ -118,6 +113,9 @@ public final class HeadsAPI {
     public static String getBase64(@NotNull String uuid) {
         String base64 = getBase64ThruBukkit(uuid);
         if (base64 == null) {
+            if (verbose) {
+                Bukkit.getLogger().info("[HeadsAPI] Texture not found in Bukkit! Getting texture through API...");
+            }
             try {
                 base64 = getBase64ThruAPI(uuid);
             } catch (IOException e) {
