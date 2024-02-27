@@ -1,6 +1,7 @@
 package dev.jsinco.headsapi;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -15,7 +16,7 @@ import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 public final class HeadsAPI {
@@ -100,8 +101,11 @@ public final class HeadsAPI {
             Bukkit.getLogger().info("[HeadsAPI] Getting texture from Bukkit player profile! \n" + playerProfile);
         }
 
-
-        return playerProfile.getProperties().stream().toList().get(0).getValue();
+        List<ProfileProperty> profileProperties = playerProfile.getProperties().stream().toList();
+        if (profileProperties.isEmpty()) {
+            return null;
+        }
+        return profileProperties.get(0).getValue();
     }
 
     /**
