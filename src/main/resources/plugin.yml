@@ -1,0 +1,4 @@
+name: TextureAPI
+version: '${project.version}'
+main: dev.jsinco.textureapi.TextureAPI
+api-version: '1.20'

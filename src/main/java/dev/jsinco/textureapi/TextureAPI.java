@@ -1,12 +1,15 @@
-package dev.jsinco.headsapi;
+package dev.jsinco.textureapi;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.jsinco.textureapi.storage.CachedTexture;
+import dev.jsinco.textureapi.storage.SQLite;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,9 +22,23 @@ import java.net.URL;
 import java.util.List;
 import java.util.UUID;
 
-public final class HeadsAPI {
+public final class TextureAPI extends JavaPlugin {
 
+    private static final Gson gson = new Gson();
     private static boolean verbose = false;
+    private static TextureAPI plugin;
+    private static SQLite database;
+
+    @Override
+    public void onEnable() {
+        plugin = this;
+        database = new SQLite(this);
+    }
+
+    @Override
+    public void onDisable() {
+        database.closeConnection();
+    }
 
     /**
      * Get the base64 texture of a player's head using the Mojang API
@@ -32,13 +49,15 @@ public final class HeadsAPI {
     @Nullable
     public static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
         if (verbose) {
-            Bukkit.getLogger().info("[HeadsAPI] Getting MC profile through API...");
+            Bukkit.getLogger().info("[TextureAPI] Getting MC profile through API...");
         }
         StringBuilder content = getMinecraftProfile(uuid);
-        JsonObject jsonObject = new Gson().fromJson(content.toString(), JsonObject.class);
+        JsonObject jsonObject = gson.fromJson(content.toString(), JsonObject.class);
         JsonElement properties = jsonObject.get("properties");
         for (JsonElement property : properties.getAsJsonArray()) {
-            return property.getAsJsonObject().get("value").getAsString().replace("\"", "").strip();
+            String base64 = property.getAsJsonObject().get("value").getAsString().replace("\"", "").strip();
+            database.saveTexture(UUID.fromString(uuid), base64, true);
+            return base64;
         }
         return null;
     }
@@ -50,8 +69,7 @@ public final class HeadsAPI {
      * @return the Minecraft profile of the player if it's a valid UUID
      * @throws IOException if the Mojang API is down, or you have no internet connection
      */
-    @Nullable
-    public static StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
+    public static @NotNull StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
         uuid = uuid.replace("-", "").strip();
         StringBuilder content = new StringBuilder();
 
@@ -72,12 +90,9 @@ public final class HeadsAPI {
         }
 
         if (verbose) {
-            Bukkit.getLogger().info("[HeadsAPI] Got MC profile through API!\n" + content);
+            Bukkit.getLogger().info("[TextureAPI] Got MC profile through API!\n" + content);
         }
 
-        if (content.isEmpty()) {
-            return null;
-        }
         return content;
     }
 
@@ -88,9 +103,9 @@ public final class HeadsAPI {
      * @return the base64 texture of the player's head or null if Bukkit cannot find their texture
      */
     @Nullable
-    public static String getBase64ThruBukkit(@NotNull String uuid) {
+    private static String getBase64ThruBukkit(@NotNull String uuid) {
         if (verbose) {
-            Bukkit.getLogger().info("[HeadsAPI] Looking for MC profile through Bukkit...");
+            Bukkit.getLogger().info("[TextureAPI] Looking for MC profile through Bukkit...");
         }
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid));
         if (!offlinePlayer.hasPlayedBefore()) {
@@ -98,7 +113,7 @@ public final class HeadsAPI {
         }
         PlayerProfile playerProfile = offlinePlayer.getPlayerProfile();
         if (verbose) {
-            Bukkit.getLogger().info("[HeadsAPI] Getting texture from Bukkit player profile! \n" + playerProfile);
+            Bukkit.getLogger().info("[TextureAPI] Getting texture from Bukkit player profile! \n" + playerProfile);
         }
 
         List<ProfileProperty> profileProperties = playerProfile.getProperties().stream().toList();
@@ -114,29 +129,17 @@ public final class HeadsAPI {
      * @return the base64 texture of the player's head or null if the player has no texture
      */
     @Nullable
-    public static String getBase64(@NotNull String uuid) {
-        String base64 = getBase64ThruBukkit(uuid);
+    public static String getBase64(UUID uuid) {
+        CachedTexture base64 = database.pullTextureFromDB(uuid);
         if (base64 == null) {
-            if (verbose) {
-                Bukkit.getLogger().info("[HeadsAPI] Texture not found in Bukkit! Getting texture through API...");
-            }
+            log("Texture not found in database, getting texture from API...");
             try {
-                base64 = getBase64ThruAPI(uuid);
+                return getBase64ThruAPI(uuid.toString());
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException("Could not get texture from Mojang API", e);
             }
         }
-        return base64;
-    }
-
-    /**
-     * Get the base64 texture of a player's head using the Mojang API if the texture is not found in Bukkit
-     * @param uuid the UUID of the player
-     * @return the base64 texture of the player's head or null if the player has no texture
-     */
-    @Nullable
-    public static String getBase64(@NotNull UUID uuid) {
-        return getBase64(uuid.toString());
+        return base64.getBase64();
     }
 
     /**
@@ -144,7 +147,14 @@ public final class HeadsAPI {
      * @param verbose true if you want to see the API's logs
      */
     public static void setVerbose(boolean verbose) {
-        HeadsAPI.verbose = verbose;
+        TextureAPI.verbose = verbose;
+    }
+
+
+    public static void log(String message) {
+        if (verbose) {
+            Bukkit.getLogger().info("[TextureAPI] " + message);
+        }
     }
 
     /**
@@ -153,5 +163,9 @@ public final class HeadsAPI {
      */
     public static boolean isVerbose() {
         return verbose;
+    }
+
+    public static TextureAPI getPlugin() {
+        return plugin;
     }
 }
