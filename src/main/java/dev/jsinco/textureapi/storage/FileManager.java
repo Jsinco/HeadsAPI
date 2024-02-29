@@ -1,6 +1,8 @@
-package dev.jsinco.textureapi;
+package dev.jsinco.textureapi.storage;
 
+import dev.jsinco.textureapi.TextureAPI;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +11,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 
 public class FileManager {
-    private final static TextureAPI plugin = TextureAPI.getPlugin();
+
+    private final static JavaPlugin plugin = TextureAPI.getPlugin();
     private final static File dataFolder = plugin.getDataFolder();
 
     private final String fileName;

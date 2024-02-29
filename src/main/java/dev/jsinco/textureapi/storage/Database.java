@@ -94,4 +94,8 @@ public abstract class Database {
         }
         saveCachedTexture(cachedTexture);
     }
+
+    public ConcurrentLinkedQueue<CachedTexture> getCache() {
+        return cache;
+    }
 }

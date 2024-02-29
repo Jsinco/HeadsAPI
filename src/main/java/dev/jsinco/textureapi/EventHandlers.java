@@ -2,6 +2,7 @@ package dev.jsinco.textureapi;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import dev.jsinco.textureapi.storage.CachedTexture;
 import dev.jsinco.textureapi.storage.Database;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,19 +28,20 @@ public class EventHandlers implements Listener {
                 PlayerProfile profile = event.getPlayer().getPlayerProfile();
 
                 TextureAPI.log("Running async task to pull textures from database.");
-                if (sql.pullTextureFromDB(uuid) != null) {
-                    return;
-                }
+                CachedTexture cachedTexture = sql.pullTextureFromDB(uuid);
 
-                TextureAPI.log("Texture not found in database, pulling from Mojang API.");
                 try {
                     String base64 = null;
                     for (ProfileProperty property : profile.getProperties()) {
                         base64 = property.getValue();
                     }
 
-                    if (base64 != null) {
+                    if (cachedTexture != null && !cachedTexture.getBase64().equals(base64)) {
                         sql.saveTexture(uuid, base64, true);
+                        TextureAPI.log("Texture found in database, but it's outdated. Updating...");
+                    } else if (base64 != null) {
+                        sql.saveTexture(uuid, base64, true);
+                        TextureAPI.log("Texture not found in database, saving...");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

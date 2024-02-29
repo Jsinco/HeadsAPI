@@ -1,7 +1,6 @@
 package dev.jsinco.textureapi.storage;
 
-import dev.jsinco.textureapi.FileManager;
-import dev.jsinco.textureapi.TextureAPI;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.sql.Connection;
@@ -11,14 +10,14 @@ import java.util.logging.Level;
 
 public class SQLite extends Database {
 
-    private final TextureAPI plugin;
+    private final JavaPlugin plugin;
     private Connection connection;
     private final File sqlFile;
 
 
-    public SQLite(final TextureAPI plugin) {
+    public SQLite(final JavaPlugin plugin) {
         this.plugin = plugin;
-        sqlFile = new FileManager("textures.db").generateAndGetFile();
+        sqlFile = new FileManager("textureAPI.db").generateAndGetFile();
         if (!sqlFile.exists()) {
             try {
                 sqlFile.createNewFile();
@@ -39,7 +38,7 @@ public class SQLite extends Database {
             connection = DriverManager.getConnection("jdbc:sqlite:" + sqlFile);
             return connection;
         } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, "SQLite exception on initialize", ex);
+            ex.printStackTrace();
         }
         return null;
     }

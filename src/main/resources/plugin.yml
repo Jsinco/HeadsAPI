@@ -1,4 +1,9 @@
 name: TextureAPI
 version: '${project.version}'
-main: dev.jsinco.textureapi.TextureAPI
+main: dev.jsinco.textureapi.TextureAPIJavaPlugin
 api-version: '1.20'
+commands:
+  textureapi:
+    description: TextureAPI command
+    usage: /<command> <subcommand> [args]
+    permission: textureapi.command
