@@ -52,12 +52,13 @@ public abstract class Database {
         for (CachedTexture cachedTexture : cache) {
             if (cachedTexture.getUuid().equals(uuid)) {
                 cachedTexture.updateLastUpdated();
+                TextureAPI.log("Texture found in cache, returning...");
                 return cachedTexture;
             }
         }
 
+        TextureAPI.log("Texture not found in cache, pulling from database!");
         try (PreparedStatement statement = getConnection().prepareStatement("SELECT * FROM textures WHERE uuid=?;")) {
-
             statement.setString(1, String.valueOf(uuid));
             String base64 = statement.executeQuery().getString("base64");
             if (base64 != null) {

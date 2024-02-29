@@ -9,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Base64;
 import java.util.UUID;
 
 public class EventHandlers implements Listener {
@@ -31,27 +30,24 @@ public class EventHandlers implements Listener {
                 TextureAPI.log("Running async task to pull textures from database.");
                 CachedTexture cachedTexture = sql.pullTextureFromDB(uuid);
 
-                try {
-                    String base64 = null;
-                    for (ProfileProperty property : profile.getProperties()) {
-                        base64 = property.getValue();
-                    }
 
-                    if (cachedTexture != null) {
-                        for (CachedTexture cachedTexture1 : sql.getCache()) {
-                            if (cachedTexture1.getUuid().equals(uuid)) {
-                                return;
-                            }
+                String base64 = null;
+                for (ProfileProperty property : profile.getProperties()) {
+                    base64 = property.getValue();
+                }
+
+                if (cachedTexture != null) {
+                    for (CachedTexture cachedTexture1 : sql.getCache()) {
+                        if (cachedTexture1.getUuid().equals(uuid)) {
+                            return;
                         }
-
-                        sql.saveTexture(uuid, base64, true);
-                        TextureAPI.log("Texture found in database, but it's not cached, updating!");
-                    } else if (base64 != null) {
-                        sql.saveTexture(uuid, base64, true);
-                        TextureAPI.log("Texture not found in database, saving...");
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+
+                    sql.saveTexture(uuid, base64, true);
+                    TextureAPI.log("Texture found in database, but it's not cached, updating!");
+                } else if (base64 != null) {
+                    sql.saveTexture(uuid, base64, true);
+                    TextureAPI.log("Texture not found in database, saving...");
                 }
             }
         }.runTaskAsynchronously(TextureAPI.getPlugin());
