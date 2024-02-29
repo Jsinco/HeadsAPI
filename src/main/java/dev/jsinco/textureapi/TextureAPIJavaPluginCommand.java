@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings("deprecation") // This will probably only be ever used by me and I don't really care right now
 public class TextureAPIJavaPluginCommand implements TabExecutor {
 
     private final Database sql;
