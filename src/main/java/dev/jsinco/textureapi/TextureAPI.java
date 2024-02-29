@@ -58,7 +58,7 @@ public class TextureAPI {
      * @throws IOException if the Mojang API is down, or you have no internet connection
      */
     @Nullable
-    public static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
+    private static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
         log("Getting MC profile through Mojang API...");
 
         StringBuilder content = getMinecraftProfile(uuid);
@@ -83,7 +83,7 @@ public class TextureAPI {
      * @throws IOException if the Mojang API is down, or you have no internet connection
      */
     @Nullable
-    public static StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
+    private static StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
         uuid = uuid.replace("-", "").strip();
         StringBuilder content = new StringBuilder();
 
@@ -114,23 +114,26 @@ public class TextureAPI {
         return content;
     }
 
+    public static CachedTexture getTexture(UUID uuid) {
+        return getTexture(uuid, false);
+    }
+
     /**
      * Get the base64 texture of a player's head using the Mojang API if the texture is not found in Bukkit
      * @param uuid the UUID of the player
      * @return the base64 texture of the player's head or null if the player has no texture
      */
-    @Nullable
-    public static String getBase64(UUID uuid) {
-        CachedTexture base64 = database.pullTextureFromDB(uuid);
-        if (base64 == null) {
+    public static CachedTexture getTexture(UUID uuid, boolean keepAlive) {
+        CachedTexture texture = database.pullTextureFromDB(uuid);
+        if (texture == null) {
             log("Texture not found in database, getting texture from API...");
             try {
-                return getBase64ThruAPI(uuid.toString());
+                return new CachedTexture(uuid, getBase64ThruAPI(uuid.toString()), keepAlive);
             } catch (IOException e) {
-                throw new RuntimeException("Could not get texture from Mojang API", e);
+                throw new RuntimeException("Could not get texture from Mojang API. Is it down?", e);
             }
         }
-        return base64.getBase64();
+        return texture;
     }
 
     /**
