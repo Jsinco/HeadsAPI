@@ -34,15 +34,17 @@ public class TextureAPI {
     private static Database database;
 
     public TextureAPI(final JavaPlugin provider) {
-        this(provider, false);
+        this(provider, true,false);
     }
 
-    public TextureAPI(final JavaPlugin provider, boolean verbose) {
+    public TextureAPI(final JavaPlugin provider, boolean enableListener, boolean verbose) {
         plugin = provider;
         database = new SQLite(provider);
         TextureAPI.verbose = verbose;
 
-        provider.getServer().getPluginManager().registerEvents(new EventHandlers(database), provider);
+        if (enableListener) {
+            provider.getServer().getPluginManager().registerEvents(new EventHandlers(database), provider);
+        }
         if (provider instanceof TextureAPIJavaPlugin) {
             provider.getCommand("textureapi").setExecutor(new TextureAPIJavaPluginCommand(database));
         }
@@ -137,7 +139,11 @@ public class TextureAPI {
             } catch (IOException e) {
                 throw new RuntimeException("Could not get texture from Mojang API. Is it down?", e);
             }
+        } else {
+            log("Texture found in database!");
+            texture.updateLastUpdated();
         }
+
         return texture;
     }
 
