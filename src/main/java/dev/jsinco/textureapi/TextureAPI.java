@@ -7,6 +7,7 @@ import dev.jsinco.textureapi.storage.CachedTexture;
 import dev.jsinco.textureapi.storage.Database;
 import dev.jsinco.textureapi.storage.SQLite;
 import org.bukkit.Bukkit;
+import org.bukkit.Warning;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,9 +58,13 @@ public class TextureAPI {
      * @return the base64 texture of the player's head or null if the player has no texture
      * @throws IOException if the Mojang API is down, or you have no internet connection
      */
-    @Nullable
-    private static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
+    public static String getBase64ThruAPI(@NotNull String uuid) throws IOException {
         log("Getting MC profile through Mojang API...");
+
+        // check if running on main thread
+        if (Bukkit.isPrimaryThread()) {
+            throw new IllegalArgumentException("Don't run this method on the main thread!");
+        }
 
         StringBuilder content = getMinecraftProfile(uuid);
         if (content == null) {
