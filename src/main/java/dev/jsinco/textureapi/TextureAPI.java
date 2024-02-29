@@ -16,8 +16,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.UUID;
+import java.util.logging.Level;
 
 // TODO: Providing plugin
 
@@ -60,6 +62,9 @@ public class TextureAPI {
         log("Getting MC profile through Mojang API...");
 
         StringBuilder content = getMinecraftProfile(uuid);
+        if (content == null) {
+            return null;
+        }
         JsonObject jsonObject = gson.fromJson(content.toString(), JsonObject.class);
         JsonElement properties = jsonObject.get("properties");
         for (JsonElement property : properties.getAsJsonArray()) {
@@ -77,7 +82,8 @@ public class TextureAPI {
      * @return the Minecraft profile of the player if it's a valid UUID
      * @throws IOException if the Mojang API is down, or you have no internet connection
      */
-    public static @NotNull StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
+    @Nullable
+    public static StringBuilder getMinecraftProfile(@NotNull String uuid) throws IOException {
         uuid = uuid.replace("-", "").strip();
         StringBuilder content = new StringBuilder();
 
@@ -85,6 +91,8 @@ public class TextureAPI {
             URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
+            con.addRequestProperty("User-Agent", "Mozilla/5.0");
+            con.setConnectTimeout(10000);
 
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
@@ -93,8 +101,12 @@ public class TextureAPI {
             }
             in.close();
             con.disconnect();
-        } catch (ConnectException e) {
-            e.printStackTrace(); // maybe just ignore
+        } catch (ConnectException | SocketTimeoutException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to get texture from Mojang after 10 seconds! Try again maybe?");
+            if (verbose) {
+                e.printStackTrace();
+            }
+            return null;
         }
 
         log("Got MC profile through API!\n" + content);

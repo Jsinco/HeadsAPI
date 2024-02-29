@@ -36,9 +36,10 @@ public abstract class Database {
             public void run() {
                 for (CachedTexture cachedTexture : cache) {
                     if (cachedTexture.keepAlive()) continue;
+                    cachedTexture.updateWhenPlayerOnline();
 
-                    saveCachedTexture(cachedTexture);
                     if (System.currentTimeMillis() - cachedTexture.getLastUpdated() > CACHE_TIME) {
+                        saveCachedTexture(cachedTexture);
                         cache.remove(cachedTexture);
                     }
                 }
@@ -90,6 +91,7 @@ public abstract class Database {
         }
         CachedTexture cachedTexture = new CachedTexture(uuid, base64, false);
         if (cacheIt) {
+            cache.removeIf(cachedTexture1 -> cachedTexture1.getUuid().equals(uuid));
             cache.add(cachedTexture);
         }
         saveCachedTexture(cachedTexture);

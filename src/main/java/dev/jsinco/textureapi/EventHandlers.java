@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Base64;
 import java.util.UUID;
 
 public class EventHandlers implements Listener {
@@ -36,9 +37,15 @@ public class EventHandlers implements Listener {
                         base64 = property.getValue();
                     }
 
-                    if (cachedTexture != null && !cachedTexture.getBase64().equals(base64)) {
+                    if (cachedTexture != null) {
+                        for (CachedTexture cachedTexture1 : sql.getCache()) {
+                            if (cachedTexture1.getUuid().equals(uuid)) {
+                                return;
+                            }
+                        }
+
                         sql.saveTexture(uuid, base64, true);
-                        TextureAPI.log("Texture found in database, but it's outdated. Updating...");
+                        TextureAPI.log("Texture found in database, but it's not cached, updating!");
                     } else if (base64 != null) {
                         sql.saveTexture(uuid, base64, true);
                         TextureAPI.log("Texture not found in database, saving...");

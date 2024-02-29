@@ -81,12 +81,22 @@ public class TextureAPIJavaPluginCommand implements TabExecutor {
 
             case "download" -> {
                 sender.sendMessage("§6Attempting to download texture from Mojang...");
-                try {
-                    UUID.fromString(args[1]);
-                    TextureAPI.getBase64ThruAPI(args[1]);
-                } catch (IOException | IllegalArgumentException e) {
-                    throw new RuntimeException(e);
-                }
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (args.length < 2) {
+                            sender.sendMessage("§cUsage: /textureapi download <username>");
+                            return;
+                        }
+
+                        try {
+                            UUID.fromString(args[1]);
+                            TextureAPI.getBase64ThruAPI(args[1]);
+                        } catch (IOException | IllegalArgumentException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }.runTaskAsynchronously(TextureAPI.getPlugin());
             }
         }
 

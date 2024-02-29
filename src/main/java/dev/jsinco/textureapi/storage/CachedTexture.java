@@ -1,5 +1,7 @@
 package dev.jsinco.textureapi.storage;
 
+import org.bukkit.Bukkit;
+
 import java.util.UUID;
 
 public class CachedTexture {
@@ -55,5 +57,11 @@ public class CachedTexture {
 
     public void setKeepAlive(boolean keepAlive) {
         this.keepAlive = keepAlive;
+    }
+
+    public void updateWhenPlayerOnline() {
+        if (Bukkit.getPlayer(uuid) != null) {
+            updateLastUpdated();
+        }
     }
 }
