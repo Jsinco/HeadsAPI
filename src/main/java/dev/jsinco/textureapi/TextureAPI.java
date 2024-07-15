@@ -7,7 +7,6 @@ import dev.jsinco.textureapi.storage.CachedTexture;
 import dev.jsinco.textureapi.storage.Database;
 import dev.jsinco.textureapi.storage.SQLite;
 import org.bukkit.Bukkit;
-import org.bukkit.Warning;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +25,7 @@ import java.util.logging.Level;
 
 public class TextureAPI {
 
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
 
     private static final Gson gson = new Gson();
     private static boolean verbose = false;
@@ -147,12 +146,16 @@ public class TextureAPI {
         return texture;
     }
 
+    public static void saveTexture(UUID uuid, String base64, boolean keepAlive) {
+        database.saveTexture(uuid, base64, keepAlive);
+    }
+
     /**
      * Set the verbose mode of the API
-     * @param verbose true if you want to see the API's logs
+     * @param verbosity true if you want to see the API's logs
      */
-    public static void setVerbose(boolean verbose) {
-        TextureAPI.verbose = verbose;
+    public static void setVerbose(boolean verbosity) {
+        verbose = verbosity;
     }
 
 
